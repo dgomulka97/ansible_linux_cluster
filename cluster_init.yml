@@ -1,0 +1,5 @@
+---
+- name: Configure Debian Cluster
+  hosts: cluster
+  roles:
+    - common

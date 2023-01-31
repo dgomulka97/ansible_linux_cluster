@@ -1,6 +1,13 @@
 # How to create Nginx + PHP8.1 + MySQL cluster using Ansible
 
-You'll need at least 2 nodes with Debian OS.
+You'll need at least 2 Debian nodes with configured sudo.
+```
+su -
+apt update && apt upgrade -y
+apt install sudo
+usermod -aG sudo $user
+reboot
+```
 
 ## Frist configuration
 ### **Ansible host**

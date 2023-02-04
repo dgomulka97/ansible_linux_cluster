@@ -13,6 +13,7 @@
   ansible.builtin.copy:
     src: "./{{ env_role }}/index.html"
     dest: /var/www/html/index.html
+  become: true
 
 - name: Start and enable nginx service
   ansible.builtin.service:

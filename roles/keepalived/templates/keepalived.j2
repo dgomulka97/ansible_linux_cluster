@@ -1,0 +1,27 @@
+global_defs {
+  router_id nginx
+}
+
+vrrp_script check_nginx {
+  script "/bin/check_nginx.sh"
+  interval 2
+  weight 50
+}
+
+vrrp_instance VI_01 {
+  state {{ env_role }}
+  interface {{ ansible_default_ipv4.interface }}
+  virtual_router_id 151
+  priority {{ env_priority }}
+
+  virtual_ipaddress {
+    {{ env_virtual_ip }}/24
+  }
+  track_script {
+    check_nginx
+  }
+  authentication {
+    auth_type AH
+    auth_pass secret
+  }
+}

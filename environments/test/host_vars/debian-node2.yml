@@ -1,2 +1,2 @@
-env_role: MASTER
+env_role: SLAVE
 env_priority: 100

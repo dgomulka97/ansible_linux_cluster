@@ -14,7 +14,7 @@ reboot
 1. Update packages and install pip & ansible
     ```bash
     sudo apt update && sudo apt upgrade -y
-    sudo apt install python3-pip
+    sudo apt install python3-pip sshpass
     sudo pip install ansible
     ```
 2. Generate ssh key
@@ -36,3 +36,9 @@ reboot
     cat ~/id_pub.rsa >> ~/.ssh/authorized_keys
     rm ~/id_pub.rsa
     ```
+
+## How to run ansible
+---
+```
+ansible-playbook -i environments/test/inventory.ini cluster_init.yml -Kk
+```

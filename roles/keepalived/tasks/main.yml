@@ -1,0 +1,25 @@
+- name: Install keepalived
+  ansible.builtin.apt:
+    name: keepalived
+    state: present
+  become: true
+
+- name: Parse keepalived configuration
+  ansible.builtin.template:
+    src: keepalived.j2
+    dest: /etc/keepalived/keepalived.conf
+  become: true
+
+- name: Copy health-check scripts
+  ansible.builtin.copy:
+    src: scripts/
+    dest: /bin/
+    mode: 0755
+  become: true
+
+- name: Start and enable keepalived service
+  ansible.builtin.service:
+    name: keepalived
+    enabled: true
+    state: started
+  become: true

@@ -1,0 +1,22 @@
+- name: Check if nginx is installed
+  ansible.builtin.apt:
+    name: nginx
+    update_cache: true
+  become: true
+
+- name: Delete old index files
+  ansible.builtin.file:
+    path: /var/www/html/*.html
+    state: absent
+
+- name: Copy index files
+  ansible.builtin.copy:
+    src: "./{{ env_role }}/index.html"
+    dest: /var/www/html/index.html
+
+- name: Start and enable nginx service
+  ansible.builtin.service:
+    name: nginx
+    enabled: true
+    state: started
+  become: true

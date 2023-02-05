@@ -1,0 +1,23 @@
+- name: Import GPG key
+  ansible.builtin.apt_key:
+    url: https://packages.sury.org/php/apt.gpg
+    state: present
+    keyring: /etc/apt/trusted.gpg.d/sury-keyring.gpg
+  become: true
+
+- name: Add PPA repository
+  ansible.builtin.apt_repository:
+    repo: "deb https://packages.sury.org/php/ {{ ansible_distribution_release }} main"
+    state: present
+    filename: sury-php
+  become: true
+
+- name: Install php
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    update_cache: true
+  become: true
+  with_items:
+    - php8.1
+    - php8.1-fpm
+    - php8.1-mysql

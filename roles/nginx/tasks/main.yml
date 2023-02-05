@@ -13,6 +13,20 @@
   ansible.builtin.copy:
     src: "./{{ env_role }}/index.html"
     dest: /var/www/html/index.html
+    mode: 0644
+  become: true
+
+- name: Delete old configuration file
+  ansible.builtin.file:
+    path: /etc/nginx/sites-available/default
+    state: absent
+  become: true
+
+- name: Copy configuration file
+  ansible.builtin.copy:
+    src: samplesite.conf
+    dest: /etc/nginx/sites-available/samplesite.conf
+    mode: 0644
   become: true
 
 - name: Start and enable nginx service

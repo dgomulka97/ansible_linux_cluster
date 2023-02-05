@@ -1,0 +1,11 @@
+- name: Install dependencies
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  become: true
+  with_items:
+    - lsb-release
+    - ca-certificates
+    - apt-transport-https
+    - software-properties-common
+    - gnupg2

@@ -1,0 +1,3 @@
+env_mysql_pass: user.123
+env_node1_ip: 192.168.200.201
+env_node2_ip: 192.168.200.202

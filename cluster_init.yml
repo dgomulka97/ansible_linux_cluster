@@ -6,3 +6,4 @@
     - nginx
     - keepalived
     - php
+    - mysql

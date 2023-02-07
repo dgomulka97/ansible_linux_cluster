@@ -1,0 +1,104 @@
+- name: Download MySQL upstream repository package
+  ansible.builtin.shell: wget -O /tmp/mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.24-1_all.deb
+
+- name: Configure MySQL upstream repository
+  ansible.builtin.shell: env DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/mysql-apt-config.deb
+  become: true
+
+- name: Install MySQL Server
+  ansible.builtin.apt:
+    name: mysql-server
+    state: present
+    update_cache: true
+  become: true
+
+- name: Delete old mysqld configuration
+  ansible.builtin.file:
+    path: /etc/alternatives/my.cnf
+    state: absent
+  become: true
+
+- name: Copy new mysql configuration
+  ansible.builtin.copy:
+    src: "{{ env_role }}.cnf"
+    dest: /etc/alternatives/my.cnf
+    mode: 0644
+  become: true
+
+- name: Restart mysql service
+  ansible.builtin.service:
+    name: mysql
+    state: restarted
+  become: true
+
+- name: Create MySQL user that will replicate data
+  ansible.builtin.shell: "{{ item }}"
+  when: env_role == "MASTER"
+  become: true
+  with_items:
+    - "mysql -u root --password={{ env_mysql_pass }} -e \"CREATE USER 'replica'@'{{ env_node2_ip }}' IDENTIFIED BY '{{ env_mysql_pass }}';\""
+    - "mysql -u root --password={{ env_mysql_pass }} -e \"ALTER USER 'replica'@'{{ env_node2_ip }}' IDENTIFIED WITH mysql_native_password BY '{{ env_mysql_pass }}';\""
+    - "mysql -u root --password={{ env_mysql_pass }} -e \"GRANT REPLICATION SLAVE ON *.* TO 'replica'@'{{ env_node2_ip }}';\""
+
+- name: Get binlog file from primary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e 'show master status' -s | tail -n 1 | awk {'print $1'}"
+  register: master_binlog
+  when: env_role == "MASTER"
+  become: true
+
+- name: Get log position from primary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e 'show master status' -s | tail -n 1 | awk {'print $2'}"
+  register: master_position
+  when: env_role == "MASTER"
+  become: true
+
+- name: Stop slave on second node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e 'stop slave;'"
+  become: true
+  when: env_role == "SLAVE"
+
+- name: Change master to primary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e \"CHANGE MASTER TO MASTER_HOST='{{ env_node1_ip }}', MASTER_USER='replica' , MASTER_PASSWORD='{{ env_mysql_pass }}', MASTER_LOG_FILE='{{ hostvars['debian-node1']['master_binlog'].stdout }}', MASTER_LOG_POS={{ hostvars['debian-node1']['master_position'].stdout }};\""
+  become: true
+  when: env_role == "SLAVE"
+
+- name: Start slave on secondary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e 'start slave;'"
+  become: true
+  when: env_role == "SLAVE"
+
+- name: Create MySQL user that will replicate data on secondary node
+  ansible.builtin.shell: "{{ item }}"
+  when: env_role == "SLAVE"
+  become: true
+  with_items:
+    - "mysql -u root --password={{ env_mysql_pass }} -e \"CREATE USER 'replica'@'{{ env_node1_ip }}' IDENTIFIED BY '{{ env_mysql_pass }}';\""
+    - "mysql -u root --password={{ env_mysql_pass }} -e \"ALTER USER 'replica'@'{{ env_node1_ip }}' IDENTIFIED WITH mysql_native_password BY '{{ env_mysql_pass }}';\""
+    - "mysql -u root --password={{ env_mysql_pass }} -e \"GRANT REPLICATION SLAVE ON *.* TO 'replica'@'{{ env_node1_ip }}';\""
+
+- name: Get binlog file from secondary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e 'show master status' -s | tail -n 1 | awk {'print $1'}"
+  register: slave_binlog
+  when: env_role == "SLAVE"
+  become: true
+
+- name: Get log position from secondary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e 'show master status' -s | tail -n 1 | awk {'print $2'}"
+  register: slave_position
+  when: env_role == "SLAVE"
+  become: true
+
+- name: Stop slave on primary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e 'stop slave;'"
+  become: true
+  when: env_role == "MASTER"
+
+- name: Change master to primary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e \"CHANGE MASTER TO MASTER_HOST='{{ env_node2_ip }}', MASTER_USER='replica' , MASTER_PASSWORD='{{ env_mysql_pass }}', MASTER_LOG_FILE='{{ hostvars['debian-node2']['slave_binlog'].stdout }}', MASTER_LOG_POS={{ hostvars['debian-node2']['slave_position'].stdout }};\""
+  become: true
+  when: env_role == "MASTER"
+
+- name: Start slave on primary node
+  ansible.builtin.shell: "mysql -u root --password={{ env_mysql_pass }} -e 'start slave;'"
+  become: true
+  when: env_role == "MASTER"

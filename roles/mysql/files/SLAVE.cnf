@@ -1,0 +1,6 @@
+!includedir /etc/mysql/conf.d/
+!includedir /etc/mysql/mysql.conf.d/
+[mysqld]
+bind-address = 192.168.200.202
+server-id = 2
+log_bin = mysql-bin

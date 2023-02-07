@@ -9,7 +9,7 @@ usermod -aG sudo $user
 reboot
 ```
 
-## Frist configuration
+## First configuration
 ### **Ansible host**
 1. Update packages and install pip & ansible
     ```bash

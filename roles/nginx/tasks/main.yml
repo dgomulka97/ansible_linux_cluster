@@ -4,6 +4,7 @@
     update_cache: true
   become: true
 
+
 - name: Delete old index files
   ansible.builtin.file:
     path: /var/www/html/*.html
